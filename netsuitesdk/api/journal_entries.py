@@ -6,7 +6,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 class JournalEntries(ApiBase):
     SIMPLE_FIELDS = [
         'memo',
@@ -21,6 +20,10 @@ class JournalEntries(ApiBase):
         'location',
         'subsidiary',
         'toSubsidiary'
+    ]
+
+    Custom_Field_List = [
+        'customFieldList'
     ]
 
     TYPE_NAME = 'journalEntry'
@@ -45,6 +48,31 @@ class JournalEntries(ApiBase):
     def post(self, data) -> OrderedDict:
         assert data['externalId'], 'missing external id'
         je = self.class_(externalId=data['externalId'])
+
+        # Process custom fields at the journal entry level
+        if 'customFieldList' in data and data['customFieldList']:
+            custom_fields = []
+            for field in data['customFieldList']:
+                if field['type'] == 'String':
+                    custom_fields.append(
+                        self.ns_client.StringCustomFieldRef(
+                            scriptId=field['scriptId'] if 'scriptId' in field else None,
+                            internalId=field['internalId'] if 'internalId' in field else None,
+                            value=field['value']
+                        )
+                    )
+                elif field['type'] == 'Select':
+                    custom_fields.append(
+                        self.ns_client.SelectCustomFieldRef(
+                            scriptId=field['scriptId'] if 'scriptId' in field else None,
+                            internalId=field['internalId'] if 'internalId' in field else None,
+                            value=self.ns_client.ListOrRecordRef(
+                                internalId=field['value']
+                            )
+                        )
+                    )
+            je['customFieldList'] = self.ns_client.CustomFieldList(custom_fields)
+
         line_list = []
         for eod in data['lineList']:
             if 'customFieldList' in eod and eod['customFieldList']:
