@@ -86,6 +86,14 @@ class JournalEntries(ApiBase):
                                 value=field['value']
                             )
                         )
+                    if field['type'] == 'Double':
+                        custom_fields.append(
+                            self.ns_client.DoubleCustomFieldRef(
+                                scriptId=field['scriptId'] if 'scriptId' in field else None,
+                                internalId=field['internalId'] if 'internalId' in field else None,
+                                value=field['value']
+                            )
+                        )
                     elif field['type'] == 'Select':
                         custom_fields.append(
                             self.ns_client.SelectCustomFieldRef(
